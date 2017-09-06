@@ -65,7 +65,8 @@ def main():
     validation_generator = generator(validation_samples, batch_size=batch_size)
     
     from keras.models import Sequential
-    from keras.layers import Flatten, Dense, Lambda, Cropping2D
+    from keras.optimizers import Adam
+    from keras.layers import Flatten, Dense, Lambda, Cropping2D, BatchNormalization, Convolution2D
     
     ch, row, col = 3, 160, 320  # Trimmed image format
     
@@ -73,17 +74,25 @@ def main():
     model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(row, col, ch)))
     row = 90
     # Preprocess incoming data, centered around zero with small standard deviation 
-    model.add(Lambda(lambda x: x/127.5 - 1.,
-            input_shape=(row, col, ch),
-            output_shape=(row, col, ch)))    
-    model.add(Flatten(input_shape=(row, col, ch)))
-    model.add(Dense(1))
-    model.compile(loss='mse', optimizer='adam')
+    model.add(BatchNormalization(epsilon=0.001, axis=1,input_shape=(row, col, ch)))   #ch, row,col
     
+    model.add(Convolution2D(24,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
+    model.add(Convolution2D(36,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
+    model.add(Convolution2D(48,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
+    model.add(Convolution2D(64,3,3, subsample=(1,1) ,border_mode='valid', activation='relu'))
+    model.add(Convolution2D(64,3,3, subsample=(1,1) ,border_mode='valid', activation='relu'))
+    model.add(Flatten())
+    model.add(Dense(1164, activation='relu'))
+    model.add(Dense(100, activation='relu'))
+    model.add(Dense(50, activation='relu'))
+    model.add(Dense(10, activation='relu'))
+    model.add(Dense(1, activation='tanh'))
 
-
+    adam = Adam(lr=0.0001)
+    model.compile(loss='mse', optimizer=adam)
+    
     history = model.fit_generator(train_generator, samples_per_epoch= len(train_samples), 
-                        validation_data=validation_generator, 
+                        validation_data=validation_generator,
                         nb_val_samples=len(validation_samples), nb_epoch=3,
                         verbose=1)
 
