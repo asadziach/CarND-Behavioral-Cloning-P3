@@ -32,6 +32,23 @@ def generator(samples, batch_size=32):
             y_train = np.array(angles)
             yield sklearn.utils.shuffle(X_train, y_train)
 
+def plot(history_object):
+    import matplotlib
+    matplotlib.use('GTK3Cairo',warn=False, force=True)
+    import matplotlib.pyplot as plt
+    
+    ### print the keys contained in the history object
+    print(history_object.history.keys())
+    
+    ### plot the training and validation loss for each epoch
+    plt.plot(history_object.history['loss'])
+    plt.plot(history_object.history['val_loss'])
+    plt.title('model mean squared error loss')
+    plt.ylabel('mean squared error loss')
+    plt.xlabel('epoch')
+    plt.legend(['training set', 'validation set'], loc='upper right')
+    plt.show()    
+    
 def main():
     samples = []
     with open('data/driving_log.csv') as csvfile:
@@ -63,29 +80,19 @@ def main():
     model.add(Dense(1))
     model.compile(loss='mse', optimizer='adam')
     
-    import matplotlib
-    matplotlib.use('GTK3Cairo',warn=False, force=True)
-    import matplotlib.pyplot as plt
 
-    history_object = model.fit_generator(train_generator, samples_per_epoch= len(train_samples), 
+
+    history = model.fit_generator(train_generator, samples_per_epoch= len(train_samples), 
                         validation_data=validation_generator, 
                         nb_val_samples=len(validation_samples), nb_epoch=3,
                         verbose=1)
 
     
     model.save('model.h5')
+    print("Saved model.h5")
     
-    ### print the keys contained in the history object
-    print(history_object.history.keys())
-    
-    ### plot the training and validation loss for each epoch
-    plt.plot(history_object.history['loss'])
-    plt.plot(history_object.history['val_loss'])
-    plt.title('model mean squared error loss')
-    plt.ylabel('mean squared error loss')
-    plt.xlabel('epoch')
-    plt.legend(['training set', 'validation set'], loc='upper right')
-    plt.show()
+    plot(history)
+
     # Load data
     # Preprocess
     # Standardize
