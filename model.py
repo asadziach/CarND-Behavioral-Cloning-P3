@@ -4,14 +4,37 @@ Created on Sep 4, 2017
 @author: asad
 '''
 
-import os
-import csv
-import cv2
-import numpy as np
-import sklearn
-from sklearn.utils import shuffle
-
+def nvidia_model(ch, row, col):
+    
+    from keras.models import Sequential
+    from keras.layers import Flatten, Dense, Cropping2D, BatchNormalization, Convolution2D
+        
+    model = Sequential()
+    model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(row, col, ch)))
+    row = 90
+    # Preprocess incoming data, centered around zero with small standard deviation 
+    model.add(BatchNormalization(epsilon=0.001, axis=1,input_shape=(row, col, ch)))
+    
+    model.add(Convolution2D(24,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
+    model.add(Convolution2D(36,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
+    model.add(Convolution2D(48,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
+    model.add(Convolution2D(64,3,3, subsample=(1,1) ,border_mode='valid', activation='relu'))
+    model.add(Convolution2D(64,3,3, subsample=(1,1) ,border_mode='valid', activation='relu'))
+    model.add(Flatten())
+    model.add(Dense(1164, activation='relu'))
+    model.add(Dense(100, activation='relu'))
+    model.add(Dense(50, activation='relu'))
+    model.add(Dense(10, activation='relu'))
+    model.add(Dense(1, activation='tanh'))
+    
+    return model    
+    
 def generator(samples, batch_size=32):
+    import cv2
+    import numpy as np
+    import sklearn
+    from sklearn.utils import shuffle
+    
     num_samples = len(samples)
     while 1: # Loop forever so the generator never terminates
         shuffle(samples)
@@ -48,13 +71,20 @@ def plot(history_object):
     plt.xlabel('epoch')
     plt.legend(['training set', 'validation set'], loc='upper right')
     plt.show()    
+
+def read_csv(filename):
+    import csv
     
-def main():
     samples = []
-    with open('data/driving_log.csv') as csvfile:
+    with open(filename) as csvfile:
         reader = csv.reader(csvfile)
         for line in reader:
-            samples.append(line)
+            samples.append(line)    
+    return samples
+   
+def main():
+    
+    samples = read_csv('data/driving_log.csv')
 
     from sklearn.model_selection import train_test_split
     train_samples, validation_samples = train_test_split(samples, test_size=0.2)
@@ -64,29 +94,11 @@ def main():
     train_generator = generator(train_samples, batch_size=batch_size)
     validation_generator = generator(validation_samples, batch_size=batch_size)
     
-    from keras.models import Sequential
     from keras.optimizers import Adam
-    from keras.layers import Flatten, Dense, Lambda, Cropping2D, BatchNormalization, Convolution2D
     
     ch, row, col = 3, 160, 320  # Trimmed image format
     
-    model = Sequential()
-    model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(row, col, ch)))
-    row = 90
-    # Preprocess incoming data, centered around zero with small standard deviation 
-    model.add(BatchNormalization(epsilon=0.001, axis=1,input_shape=(row, col, ch)))   #ch, row,col
-    
-    model.add(Convolution2D(24,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
-    model.add(Convolution2D(36,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
-    model.add(Convolution2D(48,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
-    model.add(Convolution2D(64,3,3, subsample=(1,1) ,border_mode='valid', activation='relu'))
-    model.add(Convolution2D(64,3,3, subsample=(1,1) ,border_mode='valid', activation='relu'))
-    model.add(Flatten())
-    model.add(Dense(1164, activation='relu'))
-    model.add(Dense(100, activation='relu'))
-    model.add(Dense(50, activation='relu'))
-    model.add(Dense(10, activation='relu'))
-    model.add(Dense(1, activation='tanh'))
+    model = nvidia_model(ch, row, col)
 
     adam = Adam(lr=0.0001)
     model.compile(loss='mse', optimizer=adam)
@@ -101,11 +113,6 @@ def main():
     print("Saved model.h5")
     
     plot(history)
-
-    # Load data
-    # Preprocess
-    # Standardize
-    # shuffl/split
     
     return
 
