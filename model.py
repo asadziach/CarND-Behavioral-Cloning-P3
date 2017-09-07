@@ -3,11 +3,20 @@ Created on Sep 4, 2017
 
 @author: asad
 '''
+import cv2
+import numpy as np
+import sklearn
+import csv
+import random
+import matplotlib
+from sklearn.utils import shuffle
+from keras.models import load_model
+from keras.models import Sequential
+from keras.optimizers import Adam
+from sklearn.model_selection import train_test_split
+from keras.layers import Flatten, Dense, Cropping2D, BatchNormalization, Conv2D
 
 def nvidia_model(ch, row, col):
-    
-    from keras.models import Sequential
-    from keras.layers import Flatten, Dense, Cropping2D, BatchNormalization, Conv2D
         
     model = Sequential()
     model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(row, col, ch)))
@@ -30,10 +39,6 @@ def nvidia_model(ch, row, col):
     return model    
     
 def generator(samples, batch_size=32):
-    import cv2
-    import numpy as np
-    import sklearn
-    from sklearn.utils import shuffle
     
     num_samples = len(samples)
     while 1: # Loop forever so the generator never terminates
@@ -56,7 +61,6 @@ def generator(samples, batch_size=32):
             yield sklearn.utils.shuffle(X_train, y_train)
 
 def plot(history_object):
-    import matplotlib
     matplotlib.use('GTK3Cairo',warn=False, force=True)
     import matplotlib.pyplot as plt
     
@@ -73,35 +77,41 @@ def plot(history_object):
     plt.show()    
 
 def read_csv(filename):
-    import csv
+
+    low_steering_threshold = 0.05
     
     samples = []
     with open(filename) as csvfile:
         reader = csv.reader(csvfile)
         for line in reader:
-            samples.append(line)    
+            steering_angle = abs(float(line[3]))
+            if(steering_angle > low_steering_threshold):
+                samples.append(line)
+            # Randomly drop 70% of samples with low angles
+            elif (random.uniform(0,10) > 7):
+                samples.append(line)
+                    
     return samples
    
 def main():
     
     samples = read_csv('data/driving_log.csv')
 
-    from sklearn.model_selection import train_test_split
     train_samples, validation_samples = train_test_split(samples, test_size=0.2)
     
     batch_size = 32    
     # compile and train the model using the generator function
     train_generator = generator(train_samples, batch_size=batch_size)
     validation_generator = generator(validation_samples, batch_size=batch_size)
-    
-    from keras.optimizers import Adam
-    
+        
     ch, row, col = 3, 160, 320  # Trimmed image format
     
     model = nvidia_model(ch, row, col)
 
     adam = Adam(lr=0.0001)
     model.compile(loss='mse', optimizer=adam)
+    
+    #model = load_model('model.h5')
     
     history = model.fit_generator(train_generator, steps_per_epoch= len(train_samples)/batch_size, 
                         validation_data=validation_generator,
