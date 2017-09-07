@@ -58,9 +58,21 @@ def generator(samples, batch_size=32, training=False):
                     #Add flipped centre images
                     image_flipped = np.fliplr(center_image)
                     measurement_flipped = -center_angle
-                    
                     images.append(image_flipped)
                     angles.append(measurement_flipped)
+                    
+                    correction = 0.35 # this is a parameter to tune
+                    steering_left = center_angle + correction
+                    steering_right = center_angle - correction
+                    
+                    leftname = 'data/IMG/' +batch_sample[1].split('/')[-1]
+                    rightname = 'data/IMG/' +batch_sample[2].split('/')[-1]
+                    
+                    images.append(imread(leftname))
+                    angles.append(steering_left)
+                    
+                    images.append(imread(rightname))
+                    angles.append(steering_right)                    
 
             # trim image to only see section with road
             X_train = np.array(images)
@@ -121,10 +133,10 @@ def main():
     
     #model = load_model('model.h5')
     
-    training_data_length = len(train_samples) * 2 # flipped images
+    training_data_length = len(train_samples) * 4 # flipped cente plus left right
     history = model.fit_generator(train_generator, steps_per_epoch= training_data_length/batch_size, 
                         validation_data=validation_generator,
-                        validation_steps=len(validation_samples)/batch_size, epochs=20,
+                        validation_steps=len(validation_samples)/batch_size, epochs=15,
                         verbose=1)
 
     
