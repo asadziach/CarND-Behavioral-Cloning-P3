@@ -7,7 +7,7 @@ Created on Sep 4, 2017
 def nvidia_model(ch, row, col):
     
     from keras.models import Sequential
-    from keras.layers import Flatten, Dense, Cropping2D, BatchNormalization, Convolution2D
+    from keras.layers import Flatten, Dense, Cropping2D, BatchNormalization, Conv2D
         
     model = Sequential()
     model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(row, col, ch)))
@@ -15,11 +15,11 @@ def nvidia_model(ch, row, col):
     # Preprocess incoming data, centered around zero with small standard deviation 
     model.add(BatchNormalization(epsilon=0.001, axis=1,input_shape=(row, col, ch)))
     
-    model.add(Convolution2D(24,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
-    model.add(Convolution2D(36,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
-    model.add(Convolution2D(48,5,5, subsample=(2,2) ,border_mode='valid', activation='relu'))
-    model.add(Convolution2D(64,3,3, subsample=(1,1) ,border_mode='valid', activation='relu'))
-    model.add(Convolution2D(64,3,3, subsample=(1,1) ,border_mode='valid', activation='relu'))
+    model.add(Conv2D(24,(5,5), strides=(2,2), padding='valid', activation='relu'))
+    model.add(Conv2D(36,(5,5), strides=(2,2), padding='valid', activation='relu'))
+    model.add(Conv2D(48,(5,5), strides=(2,2), padding='valid', activation='relu'))
+    model.add(Conv2D(64,(3,3), strides=(1,1), padding='valid', activation='relu'))
+    model.add(Conv2D(64,(3,3), strides=(1,1), padding='valid', activation='relu'))
     model.add(Flatten())
     model.add(Dense(1164, activation='relu'))
     model.add(Dense(100, activation='relu'))
@@ -103,9 +103,9 @@ def main():
     adam = Adam(lr=0.0001)
     model.compile(loss='mse', optimizer=adam)
     
-    history = model.fit_generator(train_generator, samples_per_epoch= len(train_samples), 
+    history = model.fit_generator(train_generator, steps_per_epoch= len(train_samples)/batch_size, 
                         validation_data=validation_generator,
-                        nb_val_samples=len(validation_samples), nb_epoch=3,
+                        validation_steps=len(validation_samples)/batch_size, epochs=30,
                         verbose=1)
 
     
