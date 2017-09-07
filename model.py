@@ -97,7 +97,7 @@ def plot(history_object):
 
 def read_csv(filename):
 
-    low_steering_threshold = 0.05
+    low_steering_threshold = 0
     drop_threshold = 7
     
     samples = []
@@ -136,7 +136,7 @@ def main():
     training_data_length = len(train_samples) * 4 # flipped cente plus left right
     history = model.fit_generator(train_generator, steps_per_epoch= training_data_length/batch_size, 
                         validation_data=validation_generator,
-                        validation_steps=len(validation_samples)/batch_size, epochs=15,
+                        validation_steps=len(validation_samples)/batch_size, epochs=12,
                         verbose=1)
 
     
