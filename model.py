@@ -3,12 +3,11 @@ Created on Sep 4, 2017
 
 @author: asad
 '''
-import cv2
 import numpy as np
-import sklearn
-import csv
 import random
 import matplotlib
+from csv import reader
+from cv2 import imread
 from sklearn.utils import shuffle
 from keras.models import load_model
 from keras.models import Sequential
@@ -50,7 +49,7 @@ def generator(samples, batch_size=32):
             angles = []
             for batch_sample in batch_samples:
                 name = 'data/IMG/' +batch_sample[0].split('/')[-1]
-                center_image = cv2.imread(name)
+                center_image = imread(name)
                 center_angle = float(batch_sample[3])
                 images.append(center_image)
                 angles.append(center_angle)
@@ -58,7 +57,7 @@ def generator(samples, batch_size=32):
             # trim image to only see section with road
             X_train = np.array(images)
             y_train = np.array(angles)
-            yield sklearn.utils.shuffle(X_train, y_train)
+            yield shuffle(X_train, y_train)
 
 def plot(history_object):
     matplotlib.use('GTK3Cairo',warn=False, force=True)
@@ -82,8 +81,8 @@ def read_csv(filename):
     
     samples = []
     with open(filename) as csvfile:
-        reader = csv.reader(csvfile)
-        for line in reader:
+        cvsreader = reader(csvfile)
+        for line in cvsreader:
             steering_angle = abs(float(line[3]))
             if(steering_angle > low_steering_threshold):
                 samples.append(line)
