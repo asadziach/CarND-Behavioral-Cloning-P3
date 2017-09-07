@@ -37,7 +37,7 @@ def nvidia_model(ch, row, col):
     
     return model    
     
-def generator(samples, batch_size=32):
+def generator(samples, batch_size=32, training=False):
     
     num_samples = len(samples)
     while 1: # Loop forever so the generator never terminates
@@ -53,6 +53,14 @@ def generator(samples, batch_size=32):
                 center_angle = float(batch_sample[3])
                 images.append(center_image)
                 angles.append(center_angle)
+                
+                if training:
+                    #Add flipped centre images
+                    image_flipped = np.fliplr(center_image)
+                    measurement_flipped = -center_angle
+                    
+                    images.append(image_flipped)
+                    angles.append(measurement_flipped)
 
             # trim image to only see section with road
             X_train = np.array(images)
@@ -78,6 +86,7 @@ def plot(history_object):
 def read_csv(filename):
 
     low_steering_threshold = 0.05
+    drop_threshold = 7
     
     samples = []
     with open(filename) as csvfile:
@@ -86,8 +95,8 @@ def read_csv(filename):
             steering_angle = abs(float(line[3]))
             if(steering_angle > low_steering_threshold):
                 samples.append(line)
-            # Randomly drop 70% of samples with low angles
-            elif (random.uniform(0,10) > 7):
+            # Randomly drop % of samples with low angles
+            elif (random.uniform(0,10) > drop_threshold):
                 samples.append(line)
                     
     return samples
@@ -100,7 +109,7 @@ def main():
     
     batch_size = 32    
     # compile and train the model using the generator function
-    train_generator = generator(train_samples, batch_size=batch_size)
+    train_generator = generator(train_samples, batch_size=batch_size, training=True)
     validation_generator = generator(validation_samples, batch_size=batch_size)
         
     ch, row, col = 3, 160, 320  # Trimmed image format
@@ -112,9 +121,10 @@ def main():
     
     #model = load_model('model.h5')
     
-    history = model.fit_generator(train_generator, steps_per_epoch= len(train_samples)/batch_size, 
+    training_data_length = len(train_samples) * 2 # flipped images
+    history = model.fit_generator(train_generator, steps_per_epoch= training_data_length/batch_size, 
                         validation_data=validation_generator,
-                        validation_steps=len(validation_samples)/batch_size, epochs=30,
+                        validation_steps=len(validation_samples)/batch_size, epochs=20,
                         verbose=1)
 
     
