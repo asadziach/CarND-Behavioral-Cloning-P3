@@ -37,7 +37,7 @@ def nvidia_model(ch, row, col):
     
     return model    
     
-def generator(samples, batch_size=32, training=False):
+def generator(folder, samples, batch_size=32, training=False):
     
     num_samples = len(samples)
     while 1: # Loop forever so the generator never terminates
@@ -48,7 +48,7 @@ def generator(samples, batch_size=32, training=False):
             images = []
             angles = []
             for batch_sample in batch_samples:
-                name = 'data/IMG/' +batch_sample[0].split('/')[-1]
+                name = folder + '/IMG/'  +batch_sample[0].split('/')[-1]
                 center_image = imread(name)
                 center_angle = float(batch_sample[3])
                 images.append(center_image)
@@ -65,8 +65,8 @@ def generator(samples, batch_size=32, training=False):
                     steering_left = center_angle + correction
                     steering_right = center_angle - correction
                     
-                    leftname = 'data/IMG/' +batch_sample[1].split('/')[-1]
-                    rightname = 'data/IMG/' +batch_sample[2].split('/')[-1]
+                    leftname  = folder + '/IMG/' +batch_sample[1].split('/')[-1]
+                    rightname = folder + '/IMG/' +batch_sample[2].split('/')[-1]
                     
                     images.append(imread(leftname))
                     angles.append(steering_left)
@@ -95,12 +95,13 @@ def plot(history_object):
     plt.legend(['training set', 'validation set'], loc='upper right')
     plt.show()    
 
-def read_csv(filename):
+def read_driving_data(folder):
 
     low_steering_threshold = 0
     drop_threshold = 7
     
     samples = []
+    filename = folder + '/driving_log.csv'
     with open(filename) as csvfile:
         cvsreader = reader(csvfile)
         for line in cvsreader:
@@ -116,15 +117,15 @@ def read_csv(filename):
 def main():
     
     transfer_learning = True
-    
-    samples = read_csv('data/driving_log.csv')
+    folder = 'track2_0909'
+    samples = read_driving_data(folder)
 
     train_samples, validation_samples = train_test_split(samples, test_size=0.2)
     
     batch_size = 32    
     # compile and train the model using the generator function
-    train_generator = generator(train_samples, batch_size=batch_size, training=True)
-    validation_generator = generator(validation_samples, batch_size=batch_size)
+    train_generator = generator(folder, train_samples, batch_size=batch_size, training=True)
+    validation_generator = generator(folder, validation_samples, batch_size=batch_size)
         
     ch, row, col = 3, 160, 320  # Trimmed image format
     
@@ -139,7 +140,7 @@ def main():
     training_data_length = len(train_samples) * 4 # flipped cente plus left right
     history = model.fit_generator(train_generator, steps_per_epoch= training_data_length/batch_size, 
                         validation_data=validation_generator,
-                        validation_steps=len(validation_samples)/batch_size, epochs=6,
+                        validation_steps=len(validation_samples)/batch_size, epochs=10,
                         verbose=1)
 
     
