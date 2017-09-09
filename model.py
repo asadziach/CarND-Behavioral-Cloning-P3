@@ -21,8 +21,10 @@ from keras.layers import Flatten, Dense, Cropping2D, BatchNormalization, Conv2D
 def nvidia_model(ch, row, col):
         
     model = Sequential()
-    model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(row, col, ch)))
-    row = 90
+    bottom = 20
+    top = 50
+    model.add(Cropping2D(cropping=((top,bottom),(0,0)),input_shape=(row, col, ch)))
+    row = row - top, bottom
     # Preprocess incoming data, centered around zero with small standard deviation 
     model.add(BatchNormalization(epsilon=0.001, axis=1,input_shape=(row, col, ch)))
     
