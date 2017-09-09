@@ -14,7 +14,7 @@ from cv2 import imread
 from sklearn.utils import shuffle
 from keras.models import load_model
 from keras.models import Sequential
-from keras.optimizers import Adam
+from keras.optimizers import Adam, SGD
 from sklearn.model_selection import train_test_split
 from keras.layers import Flatten, Dense, Cropping2D, BatchNormalization, Conv2D
 
@@ -145,15 +145,19 @@ def main():
 
     train_samples, validation_samples = train_test_split(samples, test_size=0.2)
     
-    batch_size = 32    
+    batch_size = 16    
     # compile and train the model using the generator function
     train_generator = generator(args.image_folder, train_samples, batch_size=batch_size, training=True)
     validation_generator = generator(args.image_folder, validation_samples, batch_size=batch_size)
         
     ch, row, col = 3, 160, 320  # Trimmed image format
     
+    epochs = 6
     if transfer_learning:
         model = load_model('model.h5')
+        sgd = SGD(lr=0.001)
+        model.compile(loss='mse', optimizer=sgd)   
+        epochs=1     
     else:
         model = nvidia_model(ch, row, col)
 
@@ -163,7 +167,7 @@ def main():
     training_data_length = len(train_samples) * 4 # flipped cente plus left right
     history = model.fit_generator(train_generator, steps_per_epoch= training_data_length/batch_size, 
                         validation_data=validation_generator,
-                        validation_steps=len(validation_samples)/batch_size, epochs=5,
+                        validation_steps=len(validation_samples)/batch_size, epochs=epochs,
                         verbose=1)
 
     
