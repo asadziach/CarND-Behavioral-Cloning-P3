@@ -115,6 +115,8 @@ def read_csv(filename):
    
 def main():
     
+    transfer_learning = True
+    
     samples = read_csv('data/driving_log.csv')
 
     train_samples, validation_samples = train_test_split(samples, test_size=0.2)
@@ -126,17 +128,18 @@ def main():
         
     ch, row, col = 3, 160, 320  # Trimmed image format
     
-    model = nvidia_model(ch, row, col)
+    if transfer_learning:
+        model = load_model('model.h5')
+    else:
+        model = nvidia_model(ch, row, col)
 
-    adam = Adam(lr=0.0001)
-    model.compile(loss='mse', optimizer=adam)
-    
-    #model = load_model('model.h5')
+        adam = Adam(lr=0.0001)
+        model.compile(loss='mse', optimizer=adam)
     
     training_data_length = len(train_samples) * 4 # flipped cente plus left right
     history = model.fit_generator(train_generator, steps_per_epoch= training_data_length/batch_size, 
                         validation_data=validation_generator,
-                        validation_steps=len(validation_samples)/batch_size, epochs=12,
+                        validation_steps=len(validation_samples)/batch_size, epochs=6,
                         verbose=1)
 
     
