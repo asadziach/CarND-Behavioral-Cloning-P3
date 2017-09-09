@@ -3,6 +3,9 @@ Created on Sep 4, 2017
 
 @author: asad
 '''
+import argparse
+from sys import exit
+import os
 import numpy as np
 import random
 import matplotlib
@@ -116,16 +119,34 @@ def read_driving_data(folder):
    
 def main():
     
+    parser = argparse.ArgumentParser(description='Remote Driving')
+    parser.add_argument(
+        'image_folder',
+        type=str,
+        nargs='?',
+        default='',
+        help='Path to training image folder.'
+    )
+    args = parser.parse_args()
+    
+    if args.image_folder != '':
+        if not os.path.exists(args.image_folder):
+            print("Training folder does not exists.")
+            exit(0)
+    else:
+        print("Training data folder not provided.")
+        exit(0)
+            
     transfer_learning = True
-    folder = 'track2_0909'
-    samples = read_driving_data(folder)
+
+    samples = read_driving_data(args.image_folder)
 
     train_samples, validation_samples = train_test_split(samples, test_size=0.2)
     
     batch_size = 32    
     # compile and train the model using the generator function
-    train_generator = generator(folder, train_samples, batch_size=batch_size, training=True)
-    validation_generator = generator(folder, validation_samples, batch_size=batch_size)
+    train_generator = generator(args.image_folder, train_samples, batch_size=batch_size, training=True)
+    validation_generator = generator(args.image_folder, validation_samples, batch_size=batch_size)
         
     ch, row, col = 3, 160, 320  # Trimmed image format
     
@@ -140,7 +161,7 @@ def main():
     training_data_length = len(train_samples) * 4 # flipped cente plus left right
     history = model.fit_generator(train_generator, steps_per_epoch= training_data_length/batch_size, 
                         validation_data=validation_generator,
-                        validation_steps=len(validation_samples)/batch_size, epochs=10,
+                        validation_steps=len(validation_samples)/batch_size, epochs=5,
                         verbose=1)
 
     
