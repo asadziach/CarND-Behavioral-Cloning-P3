@@ -15,6 +15,7 @@ from sklearn.utils import shuffle
 from keras.models import load_model
 from keras.models import Sequential
 from keras.optimizers import Adam, SGD
+from keras.callbacks import TensorBoard
 from sklearn.model_selection import train_test_split
 from keras.layers import Flatten, Dense, Cropping2D, BatchNormalization, Conv2D
 
@@ -133,7 +134,7 @@ def read_driving_data(folder):
     return samples
    
 def main():
-    
+     
     # Get training data folder name from arguments
     parser = argparse.ArgumentParser(description='Remote Driving')
     parser.add_argument(
@@ -153,7 +154,7 @@ def main():
         print("Training data folder not provided.")
         exit(0)
             
-    transfer_learning = True
+    transfer_learning = False
 
     # Read CSV
     samples = read_driving_data(args.image_folder)
@@ -162,7 +163,7 @@ def main():
     train_samples, validation_samples = train_test_split(samples, test_size=0.2)
     
     # Deppans on GPU RAM
-    batch_size = 16
+    batch_size = 32
         
     # compile and train the model using the generator function
     train_generator = generator(args.image_folder, train_samples, batch_size=batch_size, training=True)
@@ -171,7 +172,7 @@ def main():
     ch, row, col = 3, 160, 320  # Input image
     
     # I've used from 5 to 20 for full traiing in this project
-    epochs = 6  
+    epochs = 5  
     
     # The following is to fine tune a trained model on problamatic areas.
     # Its done by feeding only the training data from the problamatic part of 
@@ -190,10 +191,14 @@ def main():
         model.compile(loss='mse', optimizer=adam)
     
     training_data_length = len(train_samples) * 4 # flipped cente plus left right
+    
+    tensorboard = TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=batch_size, 
+                                write_graph=True, write_grads=True, write_images=True)
+        
     history = model.fit_generator(train_generator, steps_per_epoch= training_data_length/batch_size, 
                         validation_data=validation_generator,
                         validation_steps=len(validation_samples)/batch_size, epochs=epochs,
-                        verbose=1)
+                        verbose=1, callbacks=[tensorboard])
 
     
     model.save('model.h5')
