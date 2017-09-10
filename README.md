@@ -33,10 +33,9 @@ The goals / steps of this project are the following:
 [image20]: ./writeup_images/p1.png " "
 
 ---
-Running
+Get compiled models from "Releases".
 
-For compiled models of both tracks, see "Releases" tab
-For running see [Instructions](https://github.com/udacity/CarND-Behavioral-Cloning-P3/blob/master/README.md)
+Running [Instructions](https://github.com/udacity/CarND-Behavioral-Cloning-P3/blob/master/README.md)
 ---
 ### Model Architecture and Training Strategy
 
