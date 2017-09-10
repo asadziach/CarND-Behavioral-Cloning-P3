@@ -1,122 +1,134 @@
-# Behaviorial Cloning Project
-
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
-
-Overview
----
-This repository contains starting files for the Behavioral Cloning Project.
-
-In this project, you will use what you've learned about deep neural networks and convolutional neural networks to clone driving behavior. You will train, validate and test a model using Keras. The model will output a steering angle to an autonomous vehicle.
-
-We have provided a simulator where you can steer a car around a track for data collection. You'll use image data and steering angles to train a neural network and then use this model to drive the car autonomously around the track.
-
-We also want you to create a detailed writeup of the project. Check out the [writeup template](https://github.com/udacity/CarND-Behavioral-Cloning-P3/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup. The writeup can be either a markdown file or a pdf document.
-
-To meet specifications, the project will require submitting five files: 
-* model.py (script used to create and train the model)
-* drive.py (script to drive the car - feel free to modify this file)
-* model.h5 (a trained Keras model)
-* a report writeup file (either markdown or pdf)
-* video.mp4 (a video recording of your vehicle driving autonomously around the track for at least one full lap)
-
-This README file describes how to output the video in the "Details About Files In This Directory" section.
-
-Creating a Great Writeup
----
-A great writeup should include the [rubric points](https://review.udacity.com/#!/rubrics/432/view) as well as your description of how you addressed each point.  You should include a detailed description of the code used (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
-
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
-
-The Project
+# **Behavioral Cloning** 
 ---
 The goals / steps of this project are the following:
-* Use the simulator to collect data of good driving behavior 
-* Design, train and validate a model that predicts a steering angle from image data
-* Use the model to drive the vehicle autonomously around the first track in the simulator. The vehicle should remain on the road for an entire loop around the track.
+* Use the simulator to collect data of good driving behavior
+* Build, a convolution neural network in Keras that predicts steering angles from images
+* Train and validate the model with a training and validation set
+* Test that the model successfully drives around track one without leaving the road
 * Summarize the results with a written report
 
-### Dependencies
-This lab requires:
 
-* [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit)
+[//]: # (Image References)
 
-The lab enviroment can be created with CarND Term1 Starter Kit. Click [here](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) for the details.
+[image1]: ./writeup_images/graph.png "Model Visualization"
+[image2]: ./writeup_images/center.jpg "Center driving"
+[image3]: ./writeup_images/left.jpg "Left"
+[image4]: ./writeup_images/right.jpg "Right"
+[image5]: ./examples/placeholder_small.png "Recovery Image"
+[image6]: ./writeup_images/center_flipped.jpg "Center Flipped"
+[image7]: ./writeup_images/leftright.png "LR"
+[image8]: ./writeup_images/track2.png "LR"
+[image9]: ./writeup_images/tb1.png "TensorBoard 1"
+[image10]: ./writeup_images/tb2.png "TensorBoard 2"
+[image11]: ./writeup_images/p1.png " "
+[image12]: ./writeup_images/p2.png " "
+[image13]: ./writeup_images/p3.png " "
+[image14]: ./writeup_images/p4.png " "
+[image15]: ./writeup_images/p55.png " "
+[image16]: ./writeup_images/p6.png " "
+[image17]: ./writeup_images/training.png " "
+[image18]: ./writeup_images/p1.png " "
+[image19]: ./writeup_images/p1.png " "
+[image20]: ./writeup_images/p1.png " "
 
-The following resources can be found in this github repository:
-* drive.py
-* video.py
-* writeup_template.md
+---
+### Model Architecture and Training Strategy
 
-The simulator can be downloaded from the classroom. In the classroom, we have also provided sample data that you can optionally use to help train your model.
+#### 1. An appropriate model architecture has been employed
 
-## Details About Files In This Directory
+The network architecture is shown in TensorBoard Figure below. (file model.py, function nvidia_model)
+![alt text][image1]
 
-### `drive.py`
+The network consists of a cropping layer, a normalization layer, 5 convolutional layers and 3 fully connected layers. The first two layers of the network performs image cropping and normalization. Both are hard-coded and not adjusted in the learning process. Performing these two steps in the network allows them to be accelerated via GPU processing. Cropping the images removes horizon and car's hood from the bottom. Both of these parts don't convey any useful information and only confuse the Neurual Netowrk.
 
-Usage of `drive.py` requires you have saved the trained model as an h5 file, i.e. `model.h5`. See the [Keras documentation](https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model) for how to create this file using the following command:
-```sh
-model.save(filepath)
-```
+This architecture borrows from [Nvidia's PilotNet](https://arxiv.org/pdf/1604.07316v1.pdf). This design was created empirically by Nvidia. They use strided convolutions in the first three convolutional layers with a 2×2 stride and a 5×5 kernel and a non-strided convolution with a 3×3 kernel size in the last two convolutional layers.
 
-Once the model has been saved, it can be used with drive.py using this command:
+The five convolutional layers are followed by three fully connected layers leading to an output control value which is the inverse turning radius.
 
-```sh
-python drive.py model.h5
-```
+Broadly speaking, the convolutional layers relates to feature extraction and the fully connected layers function as a controller. However by training an system end-to-end, it is not possible to make a clean break between which parts of the network function primarily as feature extractor and which serve as controller.
 
-The above command will load the trained model and use the model to make predictions on individual images in real-time and send the predicted angle back to the server via a websocket connection.
+#### 2. Attempts to reduce overfitting in the model
+The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
 
-Note: There is known local system's setting issue with replacing "," with "." when using drive.py. When this happens it can make predicted steering values clipped to max/min values. If this occurs, a known fix for this is to add "export LANG=en_US.utf8" to the bashrc file.
+Training was stopped early to prevent overfitting. I started with 20 epoch but in later runs a value between 5 and 10 was returning better results on simulator
 
-#### Saving a video of the autonomous agent
+Training data was augmented by flipping center image and adding Left/Right camera images. (code line 67-85). Data as collected by driving in both directions on track. This helps generalize the model and prevents overfitting.
 
-```sh
-python drive.py model.h5 run1
-```
+The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 162-198). 
+#### 3. Model parameter tuning
 
-The fourth argument, `run1`, is the directory in which to save the images seen by the agent. If the directory already exists, it'll be overwritten.
+During full training runs, I used Adam optimizer(model.py line 191). Default learning rate of Adam is 0.001  as provided in the original [paper](https://arxiv.org/pdf/1412.6980v8.pdf). I modified it to a lower value of 0.0001 because this architecture is prone to overfitting. This worked very well on Track 1.
 
-```sh
-ls run1
+On Track 2 some parts, specially upward curves were troublesome. I collected additional data on the problematic parts and used Classical SGD with learning rate of 0.001 with a pre-trained model. SGD gives finer level control over the learning. This rate is deliberately kept small to help generalize the model on new and smaller dataset, without overfitting.
 
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_424.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_451.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_477.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_528.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_573.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_618.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_697.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_723.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_749.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_817.jpg
-...
-```
+#### 4. Appropriate training data
 
-The image file name is a timestamp of when the image was seen. This information is used by `video.py` to create a chronological video of the agent driving.
+Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving, recovering from the left and right sides of the road. I also drive on both side of the track to collect additional data 
 
-### `video.py`
+For details about how I created the training data, see the next section. 
 
-```sh
-python video.py run1
-```
+### Model Architecture and Training Strategy
 
-Creates a video based on images found in the `run1` directory. The name of the video will be the name of the directory followed by `'.mp4'`, so, in this case the video will be `run1.mp4`.
+#### 1. Solution Design Approach
+##### Track 1
+Following class lecture, I started with a single Dense layer network to make sure my pipeline is working. Then I implemented [Nvidia's PilotNet](https://arxiv.org/pdf/1604.07316v1.pdf) in Keras because it is proven to work in this kind of use case.
 
-Optionally, one can specify the FPS (frames per second) of the video:
+I started with Udacity's provided dataset. This dataset is for track one and only overs about half of it in clockwise direction. I had trouble keeping the car straight. It would take left turn and end up in water. Then I implemented cropping layer to remove horizon and car's hood that serves no purpose but to confuse the network. Things started to improve. The cars was going straight on the root, but too straight. It was clear that there is more data going straight and model is overfitting to it.
 
-```sh
-python video.py run1 --fps 48
-```
+I implemented code to randomly drop 70% of the samples who's absolute steering angle was less than 0.25. (code line 128). It brought improvement and car made all the way to the bridge, where it swayed left and stuck with the ledge.
+![alt text][image11]
 
-Will run the video at 48 FPS. The default FPS is 60.
+Then I brought in Left and Right camera images and used them to teach recovery. For example when vehicle would has drifted right, center camera would see something similar to what right camera saw during training. A hardcoded value of 0.35 was used as recovery angle. (code line 67-85). After this car made all the way after the bridge but failed to take left turn and wound up on the dirt road. I trained for 15 epoch.
+![alt text][image12]
 
-#### Why create a video
+At that point I disabled the logic to drop 70% of the low steering angle. The logic behind my decision was that, now for every center image of low steering angle, there are two more images contributed from the Left and Right cameras that have a high correction steering angle +-0.35. This should reduce the bias of going straight. It proved to be a good decision, the car moved paste the dirt road but then end up in water on the next right S turn.
+![alt text][image13]
+At that point I decided to augment the data. I drove in the apposite direction. I tried avoid going straight and recorded recovery maneuvers. I started with pre-trained model and trained for 10 epochs. Next on my list was to use YUV formmat like Nivida did, but At this point Track 1 was conquered. I could drive autonomously around Track 1 continuously.     
 
-1. It's been noted the simulator might perform differently based on the hardware. So if your model drives succesfully on your machine it might not on another machine (your reviewer). Saving a video is a solid backup in case this happens.
-2. You could slightly alter the code in `drive.py` and/or `video.py` to create a video of what your model sees after the image is processed (may be helpful for debugging).
+##### Track 2
+Similar to Track 1 I collected training data for Track 2. It work well except for two parts of the track where car would drift left and get stuck. First problematic part was the second accent. The second part was the last right turn before the lap would end.
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+![alt text][image15]
+![alt text][image16]
 
+I collected additional data on those areas and augmented it to the rest of Track 2 data and trained together. It made situation worse. Then I changed my approach. I used pre-trained model for Track 2. Switched to classical SGD instead of Adm to keep a low consistent learning rate. Then I trained for the problematic area data for 1 epoch. Success!!! Track 2 was working autonomously continuously. 
+
+#### 2. Final Model Architecture
+
+The final model architecture consists of a cropping layer, a normalization layer, 5 convolutional layers and 3 fully connected layers. The first two layers of the network performs image cropping and normalization. This architecture borrows from [Nvidia's PilotNet](https://arxiv.org/pdf/1604.07316v1.pdf). They use strided convolutions in the first three convolutional layers with a 2×2 stride and a 5×5 kernel and a non-strided convolution with a 3×3 kernel size in the last two convolutional layers.
+
+Final network architecture is shown in Figure below. (file model.py, function nvidia_model)
+ 
+![alt text][image1]
+
+#### 3. Creation of the Training Set & Training Process
+
+To capture good driving behavior, I first recorded two laps on track one using center lane driving. One using clockwise and other anti-clockwise. Here is an example image of center lane driving:
+
+![alt text][image2]
+
+In order to teach the network how to recover if it ever gets off-centre, I used Left and Right camera images. These images show what a recovery looks like starting from Left and Right :
+
+![alt text][image3]
+![alt text][image4]
+
+
+Then I repeated this process on track two in order to get more data points.
+
+To augment the data sat, I also flipped center camera images and angles thinking that this would help generalize the model better. For example, here is an image that has then been flipped:
+
+![alt text][image2]
+![alt text][image6]
+
+Before training I randomly shuffled the data set and put 20% of the data into a validation set. 
+###### Nvidia inspired approach
+
+![alt text][image17]
+
+I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was 10 on Track 1 and 6 on Track 2. as evidenced by following figure.
+![alt text][image7]
+![alt text][image8]
+
+#### 4. TensorBoard Visualization
+![alt text][image9]
+![alt text][image10]
