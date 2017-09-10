@@ -1,5 +1,8 @@
 # **Behavioral Cloning** 
 ---
+For compiled models of both tracks, see "Releases" tab
+For running see [Instructions](https://github.com/udacity/CarND-Behavioral-Cloning-P3/blob/master/README.md)
+---
 The goals / steps of this project are the following:
 * Use the simulator to collect data of good driving behavior
 * Build, a convolution neural network in Keras that predicts steering angles from images
