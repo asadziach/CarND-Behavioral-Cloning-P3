@@ -1,7 +1,7 @@
 '''
 Created on Sep 4, 2017
 
-@author: asad
+@author: Asad Zia
 '''
 import argparse
 from sys import exit
@@ -23,8 +23,11 @@ def nvidia_model(ch, row, col):
     model = Sequential()
     bottom = 20
     top = 50
+    # Trim image to only see section with road. I added this. It is not part of 
+    # official Nvidia architecture.,
     model.add(Cropping2D(cropping=((top,bottom),(0,0)),input_shape=(row, col, ch)))
-    row = row - top, bottom
+    row = row - top, bottom #Trimmed image format
+    
     # Preprocess incoming data, centered around zero with small standard deviation 
     model.add(BatchNormalization(epsilon=0.001, axis=1,input_shape=(row, col, ch)))
     
@@ -59,6 +62,7 @@ def generator(folder, samples, batch_size=32, training=False):
                 images.append(center_image)
                 angles.append(center_angle)
                 
+                # Only augment data when training
                 if training:
                     #Add flipped centre images
                     image_flipped = np.fliplr(center_image)
@@ -79,12 +83,12 @@ def generator(folder, samples, batch_size=32, training=False):
                     images.append(imread(rightname))
                     angles.append(steering_right)                    
 
-            # trim image to only see section with road
             X_train = np.array(images)
             y_train = np.array(angles)
             yield shuffle(X_train, y_train)
 
 def plot(history_object):
+    # I had the GTK3Cairo backend installed.
     matplotlib.use('GTK3Cairo',warn=False, force=True)
     import matplotlib.pyplot as plt
     
@@ -102,6 +106,15 @@ def plot(history_object):
 
 def read_driving_data(folder):
 
+    '''
+    Initially I was only using centre camera image. So I excluded something like 70% 
+    of the data that has angles near to zero, i.e steerings <= 0.25. First Track has a lot 
+    of data going straight, so the model will have bias associated with going straight.
+    
+    When I started using Left/Right Cameara images then the below logic became less effective
+    since there is two times more data with high steering angles.
+    low_steering_threshold = 0 disables it
+    '''
     low_steering_threshold = 0
     drop_threshold = 7
     
@@ -121,6 +134,7 @@ def read_driving_data(folder):
    
 def main():
     
+    # Get training data folder name from arguments
     parser = argparse.ArgumentParser(description='Remote Driving')
     parser.add_argument(
         'image_folder',
@@ -141,22 +155,33 @@ def main():
             
     transfer_learning = True
 
+    # Read CSV
     samples = read_driving_data(args.image_folder)
 
+    # Training and Validation data split
     train_samples, validation_samples = train_test_split(samples, test_size=0.2)
     
-    batch_size = 16    
+    # Deppans on GPU RAM
+    batch_size = 16
+        
     # compile and train the model using the generator function
     train_generator = generator(args.image_folder, train_samples, batch_size=batch_size, training=True)
     validation_generator = generator(args.image_folder, validation_samples, batch_size=batch_size)
         
-    ch, row, col = 3, 160, 320  # Trimmed image format
+    ch, row, col = 3, 160, 320  # Input image
     
-    epochs = 6
+    # I've used from 5 to 20 for full traiing in this project
+    epochs = 6  
+    
+    # The following is to fine tune a trained model on problamatic areas.
+    # Its done by feeding only the training data from the problamatic part of 
+    # the track and lowering the learning rate.
     if transfer_learning:
         model = load_model('model.h5')
+        # Using Classical Stochastic gradient descent instead of Adam
         sgd = SGD(lr=0.001)
-        model.compile(loss='mse', optimizer=sgd)   
+        model.compile(loss='mse', optimizer=sgd)
+        # Lower the epochs to prevent overfitting to new data.
         epochs=1     
     else:
         model = nvidia_model(ch, row, col)
